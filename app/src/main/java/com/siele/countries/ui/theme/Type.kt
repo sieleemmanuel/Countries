@@ -1,5 +1,6 @@
 package com.siele.countries.ui.theme
 
+import androidx.compose.material.TextFieldColors
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -12,7 +13,8 @@ val Typography = Typography(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp
-    )
+    ),
+
     /* Other default text styles to override
     button = TextStyle(
         fontFamily = FontFamily.Default,
