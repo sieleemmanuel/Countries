@@ -1,12 +1,15 @@
 package com.siele.countries
 
+import android.icu.text.CaseMap.Title
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -25,24 +28,29 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.siele.countries.ui.theme.CountriesTheme
+import java.util.*
 
 @Composable
-fun CountryDetails(navController: NavController) {
+fun CountryDetails(navController: NavController, selectedCountry: String?) {
     Scaffold(
-        topBar = { DetailsTopBar(navController=navController)}) {paddingValues ->
+        topBar = { DetailsTopBar(
+            navController=navController,
+            title = selectedCountry!!)}) {paddingValues ->
         DetailsContent(paddingValues)
     }
 }
 
 @Composable
 fun DetailsContent(paddingValues: PaddingValues, modifier: Modifier=Modifier) {
-   Box(modifier = modifier
+    val scrollState = rememberScrollState()
+    Box(modifier = modifier
        .padding(paddingValues)
-       .fillMaxSize()) {
-       val scrollState = rememberScrollState()
+        ) {
+
        Column(modifier = modifier
            .fillMaxWidth()
-           .padding(horizontal = 16.dp)
+           .padding(all = 16.dp)
+           .verticalScroll(state = scrollState)
        ) {
            Box(modifier = modifier
                .fillMaxWidth()
@@ -146,13 +154,13 @@ private fun NavigateButton(onClick:()->Unit,
 }
 
 @Composable
-fun DetailsTopBar(navController: NavController, modifier: Modifier=Modifier) {
+fun DetailsTopBar(navController: NavController, modifier: Modifier=Modifier, title: String) {
     TopAppBar(
         elevation = 0.dp,
         title = {
             Text(
-                text = "CountryName",
-                textAlign = TextAlign.Center,
+                text = title.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() },
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = modifier.fillMaxWidth()
@@ -171,6 +179,9 @@ fun DetailsTopBar(navController: NavController, modifier: Modifier=Modifier) {
 @Composable
 fun DetailsPreview() {
     CountriesTheme(darkTheme = true) {
-       CountryDetails(navController = rememberNavController())
+       CountryDetails(
+           navController = rememberNavController(),
+           selectedCountry = "Kenya"
+       )
     }
 }

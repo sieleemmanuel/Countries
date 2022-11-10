@@ -1,5 +1,6 @@
 package com.siele.countries
 
+import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,6 +21,7 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +30,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.siele.countries.ui.theme.CountriesTheme
@@ -43,14 +48,18 @@ fun ListCountries(
         modifier = modifier
             .fillMaxSize()
     ) { paddingValues ->
-        ListCountriesContent(paddingValues = paddingValues)
+        ListCountriesContent(paddingValues = paddingValues, navController = navController)
     }
 
 }
 
 @Composable
-fun TopBar() {
-    val isDarkMode by remember { mutableStateOf(false) }
+fun TopBar(viewModel: CountriesViewModel= hiltViewModel()) {
+    val context = LocalContext.current
+    val dataStore = viewModel.getDataStore(context)
+    val darkModeActive = dataStore.getDayMode
+        .collectAsState(initial = isSystemInDarkTheme()).value?:false
+    val isDarkMode by remember{ mutableStateOf( darkModeActive)}
     TopAppBar(
         elevation = 0.dp,
         title = {
@@ -64,10 +73,14 @@ fun TopBar() {
             IconToggleButton(
                 checked = isDarkMode,
                 onCheckedChange = {
-
+                    if (darkModeActive){
+                        viewModel.setDarkMode(isDarkMode,dataStore)
+                    }else{
+                        viewModel.setDarkMode(!isDarkMode,dataStore)
+                    }
                 }) {
                 Icon(
-                    painter = if (isDarkMode) {
+                    painter = if (darkModeActive) {
                         painterResource(id= R.drawable.ic_dark_mode)
                     } else {
                         painterResource(id= R.drawable.ic_light_mode)
@@ -82,7 +95,7 @@ fun TopBar() {
 }
 
 @Composable
-fun ListCountriesContent(paddingValues: PaddingValues, modifier: Modifier = Modifier) {
+fun ListCountriesContent(paddingValues: PaddingValues, modifier: Modifier = Modifier, navController: NavController) {
 
     val focusManager = LocalFocusManager.current
     Column(
@@ -92,7 +105,7 @@ fun ListCountriesContent(paddingValues: PaddingValues, modifier: Modifier = Modi
     ) {
         SearchBar(focusManager = focusManager)
         SortList()
-        CountriesList()
+        CountriesList(navController =navController )
     }
 }
 
@@ -149,7 +162,7 @@ private fun SortButton(modifier: Modifier= Modifier, onClickAction:()->Unit, tex
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CountriesList(modifier: Modifier=Modifier) {
+fun CountriesList(modifier: Modifier=Modifier, navController: NavController) {
     val countries = listOf("Kenya", "Andora", "Uganda", "Burundi", "Mali", "Ethiopia", "Gabon")
     val groupedCountries = countries.groupBy { it[0] }
     LazyColumn(
@@ -159,11 +172,19 @@ fun CountriesList(modifier: Modifier=Modifier) {
         groupedCountries.forEach {( initial, countryInitial )->
             stickyHeader {
                 Text(
+                    modifier = modifier
+                        .background(color = MaterialTheme.colors.surface)
+                        .fillMaxWidth(),
                     text = initial.toString()
                         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() })
             }
-            items(countryInitial){
-                Row(modifier = modifier.fillMaxWidth(),
+            items(countryInitial){ country ->
+                Row(modifier = modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        Log.d("List", "CountriesList: $country")
+                        navController.navigate(route = Screen.DetailsScreen.route + "/$country")
+                    },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
@@ -175,7 +196,7 @@ fun CountriesList(modifier: Modifier=Modifier) {
                     )
                     Spacer(modifier = modifier.width(20.dp))
                     Column {
-                        Text(text = "CountryName", fontWeight = FontWeight.Bold)
+                        Text(text = country, fontWeight = FontWeight.Bold)
                         Spacer(modifier = modifier.heightIn(10.dp))
                         Text(text = "CapitalCity")
                     }
@@ -192,7 +213,6 @@ fun CountriesList(modifier: Modifier=Modifier) {
 fun SearchBar(
     focusManager: FocusManager,
     modifier: Modifier = Modifier,
-/*quotesViewModel: QuotesViewModel = hiltViewModel()*/
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
@@ -206,7 +226,6 @@ fun SearchBar(
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = {
             focusManager.clearFocus()
-// onSearch(searchQuery, quotesViewModel = quotesViewModel)
         }),
         trailingIcon = {
             if (searchQuery.isNotEmpty()) {
@@ -228,15 +247,15 @@ fun SearchBar(
                 imageVector = Icons.Default.Search,
                 contentDescription = null,
                 modifier = modifier.clickable {
-                    // onSearch(searchQuery, quotesViewModel = quotesViewModel)
                 },
                 tint = MaterialTheme.colors.onSurface
             )
         },
         colors = TextFieldDefaults.textFieldColors(
             focusedIndicatorColor = Color.Transparent,
-            unfocusedLabelColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            cursorColor = MaterialTheme.colors.onSurface
         ),
         placeholder = {
             Text(
