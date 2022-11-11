@@ -1,6 +1,6 @@
 package com.siele.countries.api
 
-import com.siele.countries.Constants
+import com.siele.countries.utils.Constants
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
