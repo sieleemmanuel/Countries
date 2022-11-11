@@ -1,4 +1,4 @@
-package com.siele.countries
+package com.siele.countries.ui
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.siele.countries.utils.Screen
 
 @Composable
 fun NavigationGraph() {
