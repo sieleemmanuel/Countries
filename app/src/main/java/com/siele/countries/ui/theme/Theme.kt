@@ -5,28 +5,30 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val DarkColorPalette = darkColors(
     primary = DarkBlue,
-    primaryVariant = Gray500,
+    primaryVariant = Gray200,
     secondary = Teal200,
     background = DarkBlue,
     surface = DarkBlue,
-    onPrimary = Gray200,
+    onPrimary = Gray100,
     onSecondary = Color.Black,
-    onBackground = Gray200,
-    onSurface = Gray200,
+    onBackground = Gray100,
+    onSurface = Gray100,
 )
 
 private val LightColorPalette = lightColors(
     primary = SurfaceLight,
-    primaryVariant = Gray900,
+    primaryVariant = Gray025,
     secondary = Teal200,
     background = SurfaceLight,
     surface = SurfaceLight,
     onPrimary = Gray900,
-    onSecondary = Color.Black,
+    onSecondary = Gray500,
     onBackground = Gray900,
     onSurface = Gray900,
 )
@@ -37,6 +39,12 @@ fun CountriesTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
         DarkColorPalette
     } else {
         LightColorPalette
+    }
+    val systemUiController = rememberSystemUiController()
+    SideEffect {
+        systemUiController.setSystemBarsColor(
+            color = colors.surface
+        )
     }
 
     MaterialTheme(

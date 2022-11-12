@@ -1,4 +1,4 @@
-package com.siele.countries
+package com.siele.countries.ui
 
 import android.content.Context
 import android.os.Bundle
@@ -10,21 +10,18 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.navigation.compose.rememberNavController
 import com.siele.countries.ui.theme.CountriesTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 val Context.dataStore:DataStore<Preferences> by preferencesDataStore(name = "settings")
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val viewModel:CountriesViewModel by viewModels()
+    private val viewModel: CountriesViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

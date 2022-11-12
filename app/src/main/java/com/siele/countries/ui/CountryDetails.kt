@@ -1,10 +1,8 @@
-package com.siele.countries
+package com.siele.countries.ui
 
-import android.icu.text.CaseMap.Title
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -17,16 +15,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberImagePainter
+import com.siele.countries.R
 import com.siele.countries.ui.theme.CountriesTheme
 import java.util.*
 
@@ -35,14 +34,22 @@ fun CountryDetails(navController: NavController, selectedCountry: String?) {
     Scaffold(
         topBar = { DetailsTopBar(
             navController=navController,
-            title = selectedCountry!!)}) {paddingValues ->
-        DetailsContent(paddingValues)
+            title = selectedCountry!!)
+        }) { paddingValues ->
+        DetailsContent(paddingValues, selectedCountry=selectedCountry)
     }
 }
 
 @Composable
-fun DetailsContent(paddingValues: PaddingValues, modifier: Modifier=Modifier) {
+fun DetailsContent(
+    paddingValues: PaddingValues,
+    modifier: Modifier = Modifier,
+    selectedCountry: String?,
+    viewModel: CountriesViewModel = hiltViewModel()
+) {
     val scrollState = rememberScrollState()
+    val country = viewModel.getCountry(selectedCountry!!)
+    Log.d("Details", "country: $country ")
     Box(modifier = modifier
        .padding(paddingValues)
         ) {
@@ -57,8 +64,14 @@ fun DetailsContent(paddingValues: PaddingValues, modifier: Modifier=Modifier) {
                .heightIn(200.dp),
                contentAlignment = Alignment.Center
            ){
+               val painter = rememberImagePainter(
+                   data = country?.flags?.last(),
+                   builder = {
+                       placeholder(R.drawable.ic_placeholder)
+                   }
+               )
                Image(
-               painter = painterResource(id = R.drawable.ic_launcher_background),
+               painter = painter,
                contentDescription = "country flag" ,
                modifier = modifier
                    .fillMaxWidth()
@@ -84,28 +97,28 @@ fun DetailsContent(paddingValues: PaddingValues, modifier: Modifier=Modifier) {
                }
            }
            Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Population:", value = "Value")
-           CountryData(title = "Region:", value = "Value")
-           CountryData(title = "Capital:", value = "Value")
-           CountryData(title = "Motto:", value = "Value")
+           CountryData(title = "Population:", value = country?.population.toString())
+           country?.region?.let { CountryData(title = "Region:", value = it) }
+           CountryData(title = "Capital:", value = country?.capital?.first().toString())
+           country?.name?.official?.let { CountryData(title = "Motto:", value = it) }
            Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Official Language:", value = "Value")
-           CountryData(title = "Ethic group:", value = "Value")
-           CountryData(title = "Religion:", value = "Value")
-           CountryData(title = "Government:", value = "Value")
+           CountryData(title = "Official Language:", value = country?.languages.toString())
+           CountryData(title = "Ethic group:", value = "")
+           CountryData(title = "Religion:", value = "")
+           country?.name?.official?.let { CountryData(title = "Government:", value = it) }
            Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Independence:", value = "Value")
-           CountryData(title = "Area:", value = "467.63 km2")
-           CountryData(title = "Currency:", value = "Euro")
-           CountryData(title = "GDP:", value = "US$3.400 billion")
+           CountryData(title = "Independence:", value = country?.independent.toString())
+           CountryData(title = "Area:", value = country?.area.toString()+"km2")
+           CountryData(title = "Currency:", value = country?.currencies.toString())
+           CountryData(title = "GDP:", value = "DGB")
            Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Time zone:", value = "UTC+01")
-           CountryData(title = "Date format:", value = "+376")
-           CountryData(title = "Dialing code:", value = "+254")
-           CountryData(title = "Driving side:", value = "Right")
+           CountryData(title = "Time zone:", value = country?.timezones?.first().toString())
+           CountryData(title = "Date format:", value = "dd/mm/yyyy")
+           CountryData(title = "Dialing code:", value = "+...")
+           CountryData(title = "Driving side:", value = country?.car.toString())
            Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Title:", value = "Value")
-           CountryData(title = "Title:", value = "Value")
+           country?.subregion?.let { CountryData(title = "Subregion:", value = it) }
+           country?.fifa?.let { CountryData(title = "Title:", value = it) }
            CountryData(title = "Title:", value = "Value")
            CountryData(title = "Title:", value = "Value")
            Spacer(modifier = modifier.heightIn(20.dp))
@@ -141,7 +154,7 @@ private fun NavigateButton(onClick:()->Unit,
                            modifier: Modifier=Modifier) {
     Box(modifier = modifier
         .clip(CircleShape)
-        .background(color = Color(0xFF667085))) {
+        .background(color = MaterialTheme.colors.primaryVariant)) {
         IconButton(onClick = onClick) {
             Icon(
                 painter = painterResource(id = icon),
