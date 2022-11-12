@@ -15,6 +15,7 @@ import javax.net.ssl.HttpsURLConnection
 
 @HiltViewModel
 class CountriesViewModel @Inject constructor(private val countriesRepo: CountriesRepo):ViewModel() {
+    val emptySearch = mutableStateOf(false)
     val countries = mutableStateOf(listOf<Country>())
     var isLoading = mutableStateOf(false)
     var isError = mutableStateOf("")
