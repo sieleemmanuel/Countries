@@ -19,6 +19,7 @@ Countries app is build using:
     -   [Navigation Components](https://developer.android.com/jetpack/compose/navigation) - Android Jetpack's component for implementing navigation for consistent and predictable user experience in android app
 
 - [Retrofit](https://square.github.io/retrofit) - Type-safe HTTP Client for consuming RESTful API web services in android
+- [Coil](https://github.com/coil-kt/coil) - Kotlin-first image loading library for Android which uses Kotlin Coroutines behind the hood
 
 # Links 
 Apk Link: [)https://drive.google.com)
