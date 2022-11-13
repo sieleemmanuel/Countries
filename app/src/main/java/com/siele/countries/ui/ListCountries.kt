@@ -37,12 +37,14 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.siele.countries.R
+import com.siele.countries.model.FilterItem
 import com.siele.countries.utils.Screen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.*
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalFoundationApi::class)
+@ExperimentalMaterialApi
 @Composable
 fun ListCountries(
     modifier: Modifier = Modifier,
@@ -62,18 +64,21 @@ fun ListCountries(
     val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = bottomSheetState
     )
+    val searchQuery = rememberSaveable { mutableStateOf("") }
+
     BottomSheet(
         topBar = { TopBar() },
         bottomSheetScaffoldState = bottomSheetScaffoldState,
         sheetState = bottomSheetState,
-        coroutineScope = coroutineScope,
-        modifier = modifier/*.fillMaxWidth()*/
-    ){ paddingValues ->
+        coroutineScope = coroutineScope
+
+    ) { paddingValues ->
         ListCountriesContent(
             paddingValues = paddingValues,
             navController = navController,
             coroutineScope = coroutineScope,
-            bottomSheetState = bottomSheetState
+            bottomSheetState = bottomSheetState,
+            searchQuery = searchQuery,
         )
     }
 
@@ -139,13 +144,15 @@ fun TopBar(modifier: Modifier = Modifier, viewModel: CountriesViewModel = hiltVi
 }
 
 @OptIn(ExperimentalMaterialApi::class)
+@ExperimentalFoundationApi
 @Composable
 fun ListCountriesContent(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
     navController: NavController,
-    coroutineScope:CoroutineScope,
-    bottomSheetState: BottomSheetState
+    coroutineScope: CoroutineScope,
+    bottomSheetState: BottomSheetState,
+    searchQuery: MutableState<String>
 ) {
 
     val focusManager = LocalFocusManager.current
@@ -154,33 +161,25 @@ fun ListCountriesContent(
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        SearchBar(focusManager = focusManager)
+        SearchBar(focusManager = focusManager, searchQuery = searchQuery)
         SortList(coroutineScope = coroutineScope, bottomSheetState = bottomSheetState)
-        CountriesList(navController = navController)
+        CountriesList(
+            navController = navController,
+            searchQuery = searchQuery,
+        )
 
 
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@ExperimentalMaterialApi
 @Composable
-fun SortList(modifier: Modifier = Modifier, coroutineScope:CoroutineScope, bottomSheetState: BottomSheetState) {
+fun SortList(
+    modifier: Modifier = Modifier,
+    coroutineScope: CoroutineScope,
+    bottomSheetState: BottomSheetState
+) {
     val context = LocalContext.current
-    /*val coroutineScope = rememberCoroutineScope()
-
-    val bottomSheetState = rememberBottomSheetState(
-        initialValue = BottomSheetValue.Collapsed
-    )
-    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = bottomSheetState
-    )
-    BottomSheet(
-        bottomSheetScaffoldState = bottomSheetScaffoldState,
-        sheetState = bottomSheetState,
-        coroutineScope = coroutineScope
-    ){
-
-    }*/
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -249,86 +248,117 @@ private fun SortButton(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@ExperimentalFoundationApi
 @Composable
 fun CountriesList(
     modifier: Modifier = Modifier,
     navController: NavController,
-    viewModel: CountriesViewModel = hiltViewModel()
+    viewModel: CountriesViewModel = hiltViewModel(),
+    searchQuery: MutableState<String>,
 ) {
-    val countries = viewModel.countries.value.sortedBy {
-        it.name.common
+    val countries = when {
+        viewModel.searchActive.value -> {
+            viewModel.allCountries.value.filter {
+                it.name.common.lowercase().contains(searchQuery.value)
+            }
+        }
+        viewModel.filterActive.value -> {
+            Log.d("CountriesFiltered", "Countries: ${viewModel.filteredCountries.value} ")
+            viewModel.filteredCountries.value
+
+        }
+        else -> {
+            viewModel.allCountries.value
+        }
     }
     Log.d("ListCountries", "CountriesList: $countries ")
     Log.d("ListCountries", "Loading: ${viewModel.isLoading.value} ")
-    Log.d("ListCountries", "Error: ${viewModel.isError.value} ")
-    Log.d("ListCountries", "NetworkError: ${viewModel.networkError.value}")
+    Log.d("ListCountries", "Error: ${viewModel.serverErrorMessage.value} ")
+    Log.d("ListCountries", "NetworkError: ${viewModel.networkErrorMessage.value}")
     val groupedCountries = countries.groupBy { it.name.common[0] }
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (viewModel.isLoading.value) {
-            CircularProgressIndicator(
-                modifier = modifier.size(40.dp),
-                color = Color(0xFF03DAC5),
-            )
-            Log.d("ListCountries", "isLoading: ${viewModel.isLoading.value} ")
-        } else {
-            Log.d("ListCountries", "Loaded: ${viewModel.isLoading.value} ")
-            LazyColumn(
-                contentPadding = PaddingValues(all = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+        when {
+            viewModel.isLoading.value -> {
+                CircularProgressIndicator(
+                    modifier = modifier.size(40.dp),
+                    color = Color(0xFF03DAC5),
+                )
+                Log.d("ListCountries", "isLoading: ${viewModel.isLoading.value} ")
+            }
+            viewModel.isServerError.value ->{
+                Text(text = viewModel.serverErrorMessage.value)
+                Spacer(modifier = modifier.heightIn(10.dp))
+                Button(onClick = { viewModel.getCountries()}) {
+                    Text(text = "Retry")
+                }
+            }
+            viewModel.isNetworkError.value ->{
+                Text(text = viewModel.networkErrorMessage.value)
+                Spacer(modifier = modifier.heightIn(10.dp))
+                Button(onClick = { viewModel.getCountries()}) {
+                    Text(text = "Retry")
+                }
+            }
+            else -> {
+                Log.d("ListCountries", "Loaded: ${viewModel.isLoading.value} ")
+                LazyColumn(
+                    contentPadding = PaddingValues(all = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = modifier.fillMaxSize()
+                ) {
 
-                groupedCountries.forEach { (initial, countryInitial) ->
-                    stickyHeader {
-                        Text(
-                            modifier = modifier
-                                .background(color = MaterialTheme.colors.surface)
-                                .fillMaxWidth()
-                                .padding(vertical = 5.dp),
-                            text = initial.toString()
-                        )
-                    }
-                    items(items = countryInitial, key = {
-                        it.name.official
-                    }) { country ->
-                        Row(
-                            modifier = modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    Log.d("List", "CountriesList: $country")
-                                    navController.navigate(route = Screen.DetailsScreen.route + "/${country.name.common}")
-                                },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val painter = rememberImagePainter(
-                                data = country.flags?.last(),
-                                builder = {
-                                    placeholder(R.drawable.ic_placeholder)
-                                })
-                            Image(
-                                painter = painter,
-                                contentDescription = null,
+                    groupedCountries.forEach { (initial, countryInitial) ->
+                        stickyHeader {
+                            Text(
                                 modifier = modifier
-                                    .size(50.dp)
-                                    .clip(shape = RoundedCornerShape(10.dp)),
-                                contentScale = ContentScale.FillBounds
+                                    .background(color = MaterialTheme.colors.surface)
+                                    .fillMaxWidth()
+                                    .padding(vertical = 5.dp),
+                                text = initial.toString()
                             )
-                            Spacer(modifier = modifier.width(20.dp))
-                            Column {
-                                Text(text = country.name.common, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = modifier.heightIn(10.dp))
-                                Text(text = country.capital?.first().toString() ?: "null")
-                            }
-
                         }
+                        items(items = countryInitial, key = {
+                            it.name.official
+                        }) { country ->
+                            Row(
+                                modifier = modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        Log.d("List", "CountriesList: $country")
+                                        navController.navigate(route = Screen.DetailsScreen.route + "/${country.name.common}")
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val painter = rememberImagePainter(
+                                    data = country.flags?.last(),
+                                    builder = {
+                                        placeholder(R.drawable.ic_placeholder)
+                                    })
+                                Image(
+                                    painter = painter,
+                                    contentDescription = null,
+                                    modifier = modifier
+                                        .size(50.dp)
+                                        .clip(shape = RoundedCornerShape(10.dp)),
+                                    contentScale = ContentScale.FillBounds
+                                )
+                                Spacer(modifier = modifier.width(20.dp))
+                                Column {
+                                    Text(text = country.name.common, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = modifier.heightIn(10.dp))
+                                    Text(text = country.capital?.first().toString() ?: "null")
+                                }
+
+                            }
+                        }
+
                     }
 
                 }
-
             }
         }
     }
@@ -339,33 +369,32 @@ fun CountriesList(
 fun SearchBar(
     focusManager: FocusManager,
     modifier: Modifier = Modifier,
-    countriesViewModel: CountriesViewModel = hiltViewModel()
+    searchQuery: MutableState<String>,
+    viewModel: CountriesViewModel = hiltViewModel()
 ) {
-    var searchQuery by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
+
     OutlinedTextField(
-        value = searchQuery,
+        value = searchQuery.value,
         onValueChange = {
-            searchQuery = it
+            searchQuery.value = it
+            viewModel.searchActive.value = searchQuery.value.isNotEmpty()
         },
         maxLines = 1,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = {
             focusManager.clearFocus()
-            onSearch(searchQuery, countriesViewModel = countriesViewModel)
         }),
         trailingIcon = {
-            if (searchQuery.isNotEmpty()) {
+            if (searchQuery.value.isNotEmpty()) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = null,
                     modifier = modifier
                         .clickable {
-                            searchQuery = ""
+                            searchQuery.value = ""
                             focusManager.clearFocus()
-                            onSearch(searchQuery, countriesViewModel = countriesViewModel)
-                            countriesViewModel.emptySearch.value = false
                         }
                 )
             }
@@ -402,40 +431,29 @@ fun SearchBar(
     )
 }
 
-fun onSearch(searchQuery: String, countriesViewModel: CountriesViewModel) {
-    if (searchQuery.isEmpty()) {
-        countriesViewModel.emptySearch.value = false
-    } else {
-        val searchedCountries = countriesViewModel.countries.value.filter {
-            it.name.common.lowercase().contains(searchQuery) || it.name.official.lowercase()
-                .contains(searchQuery)
-        }
-        countriesViewModel.countries.value = searchedCountries
-
-        if (countriesViewModel.countries.value.isEmpty()) {
-            countriesViewModel.emptySearch.value = true
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class)
+@ExperimentalMaterialApi
 @Composable
 fun BottomSheet(
-    topBar:@Composable ()-> Unit,
+    topBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     bottomSheetScaffoldState: BottomSheetScaffoldState,
     sheetState: BottomSheetState,
     coroutineScope: CoroutineScope,
-    content:@Composable (PaddingValues)-> Unit
+    countriesViewModel: CountriesViewModel = hiltViewModel(),
+    content: @Composable (PaddingValues) -> Unit
 ) {
     var continentsExpanded by rememberSaveable { mutableStateOf(false) }
     var timeZoneExpanded by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
     BottomSheetScaffold(
         topBar = topBar,
         modifier = modifier,
-        sheetShape =  RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp),
+        sheetShape = RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp),
         sheetPeekHeight = 0.dp,
+        sheetGesturesEnabled = false,
         sheetContent = {
+
             Column(
                 modifier = modifier
                     .padding(16.dp)
@@ -453,11 +471,14 @@ fun BottomSheet(
                     )
 
                     Box(
-                        modifier = modifier.clip(RoundedCornerShape(5.dp))
+                        modifier = modifier
+                            .clip(RoundedCornerShape(5.dp))
                             .background(color = MaterialTheme.colors.primaryVariant)
-                            .clickable  { coroutineScope.launch {
-                            sheetState.collapse()
-                        }}
+                            .clickable {
+                                coroutineScope.launch {
+                                    sheetState.collapse()
+                                }
+                            }
 
                     ) {
                         Icon(
@@ -468,70 +489,137 @@ fun BottomSheet(
                         )
                     }
                 }
-
-                Spacer(modifier = modifier.heightIn(10.dp))
-                Row(
+                Column(
                     modifier = modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    Text(
-                        text = "Continents",
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 18.sp
-                    )
-
-                    IconToggleButton(
-                        checked = continentsExpanded,
-                        onCheckedChange = {
-                            continentsExpanded = it
-                        },
+                    Spacer(modifier = modifier.heightIn(10.dp))
+                    Row(
                         modifier = modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            modifier = modifier.padding(5.dp),
-                            painter = if (continentsExpanded) {
-                                painterResource(id = R.drawable.ic_arrow_up)
-                            } else {
-                                painterResource(id = R.drawable.ic_arrow_down)
-                            },
-                            contentDescription = null,
-                            tint = MaterialTheme.colors.onSurface
+                        Text(
+                            text = "Continents",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
                         )
-                    }
-                }
-                Spacer(modifier = modifier.heightIn(10.dp))
-                Row(
-                    modifier = modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Time Zone",
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 18.sp
-                    )
 
-                    IconToggleButton(
-                        checked = timeZoneExpanded,
-                        onCheckedChange = {
-                            timeZoneExpanded = it
-                        },
-                        modifier = modifier
-                    ) {
-                        Icon(
-                            modifier = modifier.padding(5.dp),
-                            painter = if (timeZoneExpanded) {
-                                painterResource(id = R.drawable.ic_arrow_up)
-                            } else {
-                                painterResource(id = R.drawable.ic_arrow_down)
+                        IconToggleButton(
+                            checked = continentsExpanded,
+                            onCheckedChange = {
+                                continentsExpanded = it
                             },
-                            contentDescription = null,
-                            tint = MaterialTheme.colors.onSurface
-                        )
+                            modifier = modifier
+                        ) {
+                            Icon(
+                                modifier = modifier.padding(5.dp),
+                                painter = if (continentsExpanded) {
+                                    painterResource(id = R.drawable.ic_arrow_up)
+                                } else {
+                                    painterResource(id = R.drawable.ic_arrow_down)
+                                },
+                                contentDescription = null,
+                                tint = MaterialTheme.colors.onSurface
+                            )
+                        }
                     }
+                    Spacer(modifier = modifier.heightIn(10.dp))
+                    if (continentsExpanded) {
+                        FilterList(filters = countriesViewModel.continentsFilters)
+                    }
+                    Spacer(modifier = modifier.heightIn(10.dp))
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Time Zone",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+
+                        IconToggleButton(
+                            checked = timeZoneExpanded,
+                            onCheckedChange = {
+                                timeZoneExpanded = it
+                            },
+                            modifier = modifier
+                        ) {
+                            Icon(
+                                modifier = modifier.padding(5.dp),
+                                painter = if (timeZoneExpanded) {
+                                    painterResource(id = R.drawable.ic_arrow_up)
+                                } else {
+                                    painterResource(id = R.drawable.ic_arrow_down)
+                                },
+                                contentDescription = null,
+                                tint = MaterialTheme.colors.onSurface
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = modifier.heightIn(10.dp))
+                    if (timeZoneExpanded) {
+                        FilterList(filters = countriesViewModel.timeZonesFilters)
+                    }
+                    Spacer(modifier = modifier.heightIn(10.dp))
+
+                    Row(modifier = modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            modifier = modifier
+                                .heightIn(48.dp),
+                            border = BorderStroke(
+                                color = MaterialTheme.colors.onSurface,
+                                width = 2.dp
+                            ),
+                            onClick = {
+                                countriesViewModel.filterActive.value = false
+                                countriesViewModel.searchActive.value = false
+                                countriesViewModel.selectedFilters.value.clear()
+                                coroutineScope.launch {
+                                    sheetState.collapse()
+                                }
+
+                            }) {
+                            Text(
+                                text = "Reset", color = MaterialTheme.colors.onSurface
+                            )
+                        }
+                        Spacer(modifier = modifier.width(30.dp))
+                        Button(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .heightIn(48.dp),
+                            onClick = {
+                                if (countriesViewModel.selectedFilters.value.isNotEmpty()) {
+                                    val filtered = countriesViewModel.allCountries.value.filter {
+                                        countriesViewModel.stringFilters.value.contains(it.region) || countriesViewModel.stringFilters.value.contains(
+                                            it.timezones?.first()
+                                        )
+                                    }
+                                    countriesViewModel.filteredCountries.value = filtered
+                                    countriesViewModel.filterActive.value = true
+                                    countriesViewModel.searchActive.value = false
+                                }
+                                coroutineScope.launch {
+                                    sheetState.collapse()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xFFFF6F00)
+                            )
+                        ) {
+                            Text(
+                                text = "Show results",
+                                color = Color.White
+                            )
+                        }
+                    }
+
                 }
 
 
@@ -545,13 +633,44 @@ fun BottomSheet(
 
 }
 
-/*@Preview(
-    showSystemUi = true
-)
 @Composable
-fun ListPreview() {
-    CountriesTheme(darkTheme = true) {
-       // ListCountries(navController = rememberNavController())
-        BottomSheet()
+private fun FilterList(
+    modifier: Modifier = Modifier,
+    filters: MutableState<List<FilterItem>>,
+    countriesViewModel: CountriesViewModel = hiltViewModel()
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(max = 250.dp)
+    ) {
+        items(filters.value) { filterItem ->
+            Row(
+                modifier = modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(text = filterItem.filter)
+                Checkbox(checked = filterItem.selected.value,
+                    onCheckedChange = {
+                        filterItem.selected.value = it
+                        if (filterItem.selected.value) {
+                            if (!countriesViewModel.selectedFilters.value.contains(filterItem)) {
+                                countriesViewModel.selectedFilters.value.add(filterItem)
+                                countriesViewModel.stringFilters.value =
+                                    countriesViewModel.selectedFilters.value.map { filterItem -> filterItem.filter }
+                                        .toMutableList()
+                            }
+                            Log.d("Filters", "Filters::${countriesViewModel.stringFilters.value} ")
+                        } else {
+                            countriesViewModel.selectedFilters.value.remove(filterItem)
+                            countriesViewModel.stringFilters.value =
+                                countriesViewModel.selectedFilters.value.map { filterItem -> filterItem.filter }
+                                    .toMutableList()
+
+                            Log.d("Filters", "Filters::${countriesViewModel.stringFilters.value} ")
+                        }
+                    })
+            }
+        }
     }
-}*/
+}

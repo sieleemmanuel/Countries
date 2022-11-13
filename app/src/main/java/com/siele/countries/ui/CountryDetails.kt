@@ -27,6 +27,8 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.siele.countries.R
 import com.siele.countries.ui.theme.CountriesTheme
+import java.text.DecimalFormat
+import java.text.NumberFormat
 import java.util.*
 
 @Composable
@@ -97,35 +99,28 @@ fun DetailsContent(
                }
            }
            Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Population:", value = country?.population.toString())
+           country?.population?.let {populationFormatter( it )}?.let { CountryData(title = "Population:", value = it) }
            country?.region?.let { CountryData(title = "Region:", value = it) }
            CountryData(title = "Capital:", value = country?.capital?.first().toString())
            country?.name?.official?.let { CountryData(title = "Motto:", value = it) }
            Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Official Language:", value = country?.languages.toString())
-           CountryData(title = "Ethic group:", value = "")
-           CountryData(title = "Religion:", value = "")
+           CountryData(title = "Official Language:", value = "Language")
+           CountryData(title = "Ethic group:", value = "Na")
+           CountryData(title = "Religion:", value = "Na")
            country?.name?.official?.let { CountryData(title = "Government:", value = it) }
            Spacer(modifier = modifier.heightIn(20.dp))
            CountryData(title = "Independence:", value = country?.independent.toString())
-           CountryData(title = "Area:", value = country?.area.toString()+"km2")
-           CountryData(title = "Currency:", value = country?.currencies.toString())
-           CountryData(title = "GDP:", value = "DGB")
+           CountryData(title = "Area:", value = country?.area.toString()+" km2")
+           CountryData(title = "Currency:", value = "Currency xxx")
+           CountryData(title = "GDP:", value = "GBB")
            Spacer(modifier = modifier.heightIn(20.dp))
            CountryData(title = "Time zone:", value = country?.timezones?.first().toString())
            CountryData(title = "Date format:", value = "dd/mm/yyyy")
-           CountryData(title = "Dialing code:", value = "+...")
-           CountryData(title = "Driving side:", value = country?.car.toString())
+           CountryData(title = "Dialing code:", value = "+123")
+           CountryData(title = "Driving side:", value = "Right")
            Spacer(modifier = modifier.heightIn(20.dp))
            country?.subregion?.let { CountryData(title = "Subregion:", value = it) }
            country?.fifa?.let { CountryData(title = "Title:", value = it) }
-           CountryData(title = "Title:", value = "Value")
-           CountryData(title = "Title:", value = "Value")
-           Spacer(modifier = modifier.heightIn(20.dp))
-           CountryData(title = "Title:", value = "Value")
-           CountryData(title = "Title:", value = "Value")
-           CountryData(title = "Title:", value = "Value")
-           CountryData(title = "Title:", value = "Value")
 
        }
    }
@@ -186,7 +181,12 @@ fun DetailsTopBar(navController: NavController, modifier: Modifier=Modifier, tit
         }
     )
 }
-@Preview(
+fun populationFormatter(int: Int): String {
+    val formatter = NumberFormat.getInstance(Locale.getDefault()) as DecimalFormat
+    formatter.applyPattern("#,###,###,###")
+    return formatter.format(int.toDouble())
+}
+    @Preview(
     showSystemUi = true
 )
 @Composable
