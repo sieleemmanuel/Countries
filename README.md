@@ -6,6 +6,14 @@ The application:
 - Displays a list of countries
 - Show details of the selected country
 - Support Dark and light modes
+# Setup App Development Environment and how to run
+
+   1. Download and install Android Studio if not installed
+   2. Download / clone this repository to a folder on your computer
+   3. Start Android Studio, open your source code folder and verify that Gradle build is going to be successful using Build.
+   4. If the build is successful, you can run the app by doing the following: click Run -> Run 'app'.
+   5. Connect your phone or create a new virtual device following on screen instruction
+   6. Enjoy the experience🎉
 
 # Tech stack
 Countries app is build using:
@@ -25,8 +33,6 @@ Countries app is build using:
 Apk Link: [)https://drive.google.com)
 
 Appetize.io Link: [(https://appetize.io/app)
-# How to run
-- Clone the project
 
 # Development Challenges
 - User Interface design - App responsive experience was a challenge. Used [Jetpack Compose](https://developer.android.com/jetpack/compose) to come up with responsive UI
