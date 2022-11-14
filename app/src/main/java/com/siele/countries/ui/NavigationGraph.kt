@@ -1,5 +1,6 @@
 package com.siele.countries.ui
 
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -8,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.siele.countries.utils.Screen
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun NavigationGraph() {
 val navController = rememberNavController()
