@@ -6,6 +6,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -177,7 +178,8 @@ fun ListCountriesContent(
 fun SortList(
     modifier: Modifier = Modifier,
     coroutineScope: CoroutineScope,
-    bottomSheetState: BottomSheetState
+    bottomSheetState: BottomSheetState,
+    countriesViewModel: CountriesViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     Row(
@@ -187,13 +189,14 @@ fun SortList(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         SortButton(onClickAction = {
-
+            countriesViewModel.isFilterSheet.value = false
             coroutineScope.launch {
-                Toast.makeText(context, "Languages list", Toast.LENGTH_SHORT).show()
+                bottomSheetState.expand()
             }
         }, text = "EN", icon = R.drawable.ic_language)
         SortButton(
             onClickAction = {
+                countriesViewModel.isFilterSheet.value = true
                 coroutineScope.launch {
                     bottomSheetState.expand()
                 }
@@ -271,11 +274,7 @@ fun CountriesList(
             viewModel.allCountries.value
         }
     }
-    Log.d("ListCountries", "CountriesList: $countries ")
-    Log.d("ListCountries", "Loading: ${viewModel.isLoading.value} ")
-    Log.d("ListCountries", "Error: ${viewModel.serverErrorMessage.value} ")
-    Log.d("ListCountries", "NetworkError: ${viewModel.networkErrorMessage.value}")
-    val groupedCountries = countries.groupBy { it.name.common[0] }
+   val groupedCountries = countries.groupBy { it.name.common[0] }
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -453,47 +452,11 @@ fun BottomSheet(
         sheetPeekHeight = 0.dp,
         sheetGesturesEnabled = false,
         sheetContent = {
-
-            Column(
-                modifier = modifier
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Filter",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-
-                    Box(
-                        modifier = modifier
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(color = MaterialTheme.colors.primaryVariant)
-                            .clickable {
-                                coroutineScope.launch {
-                                    sheetState.collapse()
-                                }
-                            }
-
-                    ) {
-                        Icon(
-                            modifier = modifier.padding(5.dp),
-                            imageVector = Icons.Default.Close,
-                            contentDescription = null,
-                            tint = MaterialTheme.colors.onSurface
-                        )
-                    }
-                }
+            if (countriesViewModel.isFilterSheet.value) {
                 Column(
                     modifier = modifier
-                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
                 ) {
-                    Spacer(modifier = modifier.heightIn(10.dp))
                     Row(
                         modifier = modifier
                             .fillMaxWidth(),
@@ -501,128 +464,229 @@ fun BottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Continents",
+                            text = "Filter",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                            fontSize = 20.sp
                         )
 
-                        IconToggleButton(
-                            checked = continentsExpanded,
-                            onCheckedChange = {
-                                continentsExpanded = it
-                            },
+                        Box(
                             modifier = modifier
-                        ) {
-                            Icon(
-                                modifier = modifier.padding(5.dp),
-                                painter = if (continentsExpanded) {
-                                    painterResource(id = R.drawable.ic_arrow_up)
-                                } else {
-                                    painterResource(id = R.drawable.ic_arrow_down)
-                                },
-                                contentDescription = null,
-                                tint = MaterialTheme.colors.onSurface
-                            )
-                        }
-                    }
-                    Spacer(modifier = modifier.heightIn(10.dp))
-                    if (continentsExpanded) {
-                        FilterList(filters = countriesViewModel.continentsFilters)
-                    }
-                    Spacer(modifier = modifier.heightIn(10.dp))
-                    Row(
-                        modifier = modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Time Zone",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-
-                        IconToggleButton(
-                            checked = timeZoneExpanded,
-                            onCheckedChange = {
-                                timeZoneExpanded = it
-                            },
-                            modifier = modifier
-                        ) {
-                            Icon(
-                                modifier = modifier.padding(5.dp),
-                                painter = if (timeZoneExpanded) {
-                                    painterResource(id = R.drawable.ic_arrow_up)
-                                } else {
-                                    painterResource(id = R.drawable.ic_arrow_down)
-                                },
-                                contentDescription = null,
-                                tint = MaterialTheme.colors.onSurface
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = modifier.heightIn(10.dp))
-                    if (timeZoneExpanded) {
-                        FilterList(filters = countriesViewModel.timeZonesFilters)
-                    }
-                    Spacer(modifier = modifier.heightIn(10.dp))
-
-                    Row(modifier = modifier.fillMaxWidth()) {
-                        OutlinedButton(
-                            modifier = modifier
-                                .heightIn(48.dp),
-                            border = BorderStroke(
-                                color = MaterialTheme.colors.onSurface,
-                                width = 2.dp
-                            ),
-                            onClick = {
-                                countriesViewModel.filterActive.value = false
-                                countriesViewModel.searchActive.value = false
-                                countriesViewModel.selectedFilters.value.clear()
-                                coroutineScope.launch {
-                                    sheetState.collapse()
-                                }
-
-                            }) {
-                            Text(
-                                text = "Reset", color = MaterialTheme.colors.onSurface
-                            )
-                        }
-                        Spacer(modifier = modifier.width(30.dp))
-                        Button(
-                            modifier = modifier
-                                .fillMaxWidth()
-                                .heightIn(48.dp),
-                            onClick = {
-                                if (countriesViewModel.selectedFilters.value.isNotEmpty()) {
-                                    val filtered = countriesViewModel.allCountries.value.filter {
-                                        countriesViewModel.stringFilters.value.contains(it.region) || countriesViewModel.stringFilters.value.contains(
-                                            it.timezones?.first()
-                                        )
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(color = MaterialTheme.colors.primaryVariant)
+                                .clickable {
+                                    coroutineScope.launch {
+                                        sheetState.collapse()
                                     }
-                                    countriesViewModel.filteredCountries.value = filtered
-                                    countriesViewModel.filterActive.value = true
-                                    countriesViewModel.searchActive.value = false
                                 }
-                                coroutineScope.launch {
-                                    sheetState.collapse()
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = Color(0xFFFF6F00)
-                            )
+
                         ) {
-                            Text(
-                                text = "Show results",
-                                color = Color.White
+                            Icon(
+                                modifier = modifier.padding(5.dp),
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colors.onSurface
                             )
                         }
                     }
+                    Column(
+                        modifier = modifier
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Spacer(modifier = modifier.heightIn(10.dp))
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Continents",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
 
+                            IconToggleButton(
+                                checked = continentsExpanded,
+                                onCheckedChange = {
+                                    continentsExpanded = it
+                                },
+                                modifier = modifier
+                            ) {
+                                Icon(
+                                    modifier = modifier.padding(5.dp),
+                                    painter = if (continentsExpanded) {
+                                        painterResource(id = R.drawable.ic_arrow_up)
+                                    } else {
+                                        painterResource(id = R.drawable.ic_arrow_down)
+                                    },
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colors.onSurface
+                                )
+                            }
+                        }
+                        Spacer(modifier = modifier.heightIn(10.dp))
+                        if (continentsExpanded) {
+                            FilterList(filters = countriesViewModel.continentsFilters)
+                        }
+                        Spacer(modifier = modifier.heightIn(10.dp))
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Time Zone",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+
+                            IconToggleButton(
+                                checked = timeZoneExpanded,
+                                onCheckedChange = {
+                                    timeZoneExpanded = it
+                                },
+                                modifier = modifier
+                            ) {
+                                Icon(
+                                    modifier = modifier.padding(5.dp),
+                                    painter = if (timeZoneExpanded) {
+                                        painterResource(id = R.drawable.ic_arrow_up)
+                                    } else {
+                                        painterResource(id = R.drawable.ic_arrow_down)
+                                    },
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colors.onSurface
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = modifier.heightIn(10.dp))
+                        if (timeZoneExpanded) {
+                            FilterList(filters = countriesViewModel.timeZonesFilters)
+                        }
+                        Spacer(modifier = modifier.heightIn(10.dp))
+                            Row(modifier = modifier.fillMaxWidth()) {
+                                OutlinedButton(
+                                    modifier = modifier
+                                        .heightIn(48.dp),
+                                    border = BorderStroke(
+                                        color = MaterialTheme.colors.onSurface,
+                                        width = 2.dp
+                                    ),
+                                    onClick = {
+                                        countriesViewModel.filterActive.value = false
+                                        countriesViewModel.searchActive.value = false
+                                        countriesViewModel.selectedFilters.value.clear()
+                                        countriesViewModel.resetFilters()
+                                        coroutineScope.launch {
+                                            sheetState.collapse()
+                                        }
+
+                                    }) {
+                                    Text(
+                                        text = "Reset", color = MaterialTheme.colors.onSurface
+                                    )
+                                }
+                                Spacer(modifier = modifier.width(30.dp))
+                                Button(
+                                    modifier = modifier
+                                        .fillMaxWidth()
+                                        .heightIn(48.dp),
+                                    onClick = {
+                                        if (countriesViewModel.selectedFilters.value.isNotEmpty()) {
+                                            val filtered =
+                                                countriesViewModel.allCountries.value.filter {
+                                                    countriesViewModel.stringFilters.value.contains(
+                                                        it.region
+                                                    ) || countriesViewModel.stringFilters.value.contains(
+                                                        it.timezones?.first()
+                                                    )
+                                                }
+                                            countriesViewModel.filteredCountries.value = filtered
+                                            countriesViewModel.filterActive.value = true
+                                            countriesViewModel.searchActive.value = false
+                                        }
+                                        coroutineScope.launch {
+                                            sheetState.collapse()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        backgroundColor = Color(0xFFFF6F00)
+                                    )
+                                ) {
+                                    Text(
+                                        text = "Show results",
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                    }
                 }
+            }else{
+                Column(
+                    modifier = modifier
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Languages",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
 
+                        Box(
+                            modifier = modifier
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(color = MaterialTheme.colors.primaryVariant)
+                                .clickable {
+                                    coroutineScope.launch {
+                                        sheetState.collapse()
+                                    }
+                                }
 
+                        ) {
+                            Icon(
+                                modifier = modifier.padding(5.dp),
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colors.onSurface
+                            )
+                        }
+                    }
+                    Spacer(modifier = modifier.heightIn(10.dp))
+                    Column(
+                        modifier = modifier
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                     val (selectedOption, onOptionSelected) = remember {
+                         mutableStateOf(countriesViewModel.languages[2])
+                     }
+                        countriesViewModel.languages.forEach {  lang ->
+                            Row(modifier = modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = (lang == selectedOption),
+                                    onClick = {
+                                        onOptionSelected(lang)
+                                    }
+                                ),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = lang)
+                                RadioButton(
+                                    selected = (lang == selectedOption),
+                                    onClick = { onOptionSelected(lang)})
+                            }
+
+                        }
+
+                    }}
             }
         },
         scaffoldState = bottomSheetScaffoldState

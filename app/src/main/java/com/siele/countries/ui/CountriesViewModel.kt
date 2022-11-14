@@ -17,6 +17,7 @@ import javax.inject.Inject
 class CountriesViewModel @Inject constructor(private val countriesRepo: CountriesRepo):ViewModel() {
     val searchActive = mutableStateOf(false)
     val filterActive = mutableStateOf(false)
+    val isFilterSheet = mutableStateOf(false)
     val allCountries = mutableStateOf(listOf<Country>())
     val filteredCountries = mutableStateOf(listOf<Country>())
     private val continents = mutableStateOf(listOf<String>())
@@ -28,6 +29,8 @@ class CountriesViewModel @Inject constructor(private val countriesRepo: Countrie
     var isNetworkError = mutableStateOf(false)
     var serverErrorMessage = mutableStateOf("")
     var networkErrorMessage = mutableStateOf("")
+
+    var languages = listOf("Bahasa", "Deutch", "English", "Espanyol", "Francaise", "Italiano", "Pourtugies")
 
     var selectedFilters =  mutableStateOf(mutableListOf <FilterItem>())
     var stringFilters =  mutableStateOf(mutableListOf <String>())
@@ -66,6 +69,12 @@ class CountriesViewModel @Inject constructor(private val countriesRepo: Countrie
                         continentsFilters.value = continents.value.map {
                             FilterItem(filter = it, selected = mutableStateOf(false))
                         }
+                        timeZones.value = allCountries.value.map {
+                            it.timezones?.first().toString()
+                        }.sorted().distinct()
+                        timeZonesFilters.value = timeZones.value.map {
+                            FilterItem(filter = it, selected = mutableStateOf(false))
+                        }
 
                         timeZones.value = allCountries.value.map {
                             it.timezones?.first().toString()
@@ -94,6 +103,14 @@ class CountriesViewModel @Inject constructor(private val countriesRepo: Countrie
         }
     }
 
+    fun resetFilters(){
+        for (continent in continentsFilters.value){
+            continent.selected.value = false
+        }
+        for (timeZone in timeZonesFilters.value){
+            timeZone.selected.value = false
+        }
+    }
     fun getCountry(name:String):Country?{
         if (allCountries.value.isNotEmpty()) {
             return allCountries.value.find { it.name.common == name }!!
