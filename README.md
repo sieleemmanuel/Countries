@@ -1,5 +1,5 @@
 # Countries
-Hng9 Stage3 task. A responsive app consuming Country API to display list of countries with their details.
+Hng9 Stage3 task. A responsive app consuming [Countries API](https://restcountries.com/v3/all) to display list of countries with their details.
 
 # Features
 The application:
@@ -30,12 +30,13 @@ Countries app is build using:
 - [Coil](https://github.com/coil-kt/coil) - Kotlin-first image loading library for Android which uses Kotlin Coroutines behind the hood
 
 # Links 
-Apk Link: [)https://drive.google.com)
+Apk Link: [https://drive.google.com/file/d/1cPUhi05xghv1annxOcaveuqoWrJxMhuH/view?usp=share_link](https://drive.google.com/file/d/1cPUhi05xghv1annxOcaveuqoWrJxMhuH/view?usp=share_link)
 
-Appetize.io Link: [(https://appetize.io/app)
+Appetize.io Link: [https://appetize.io/app/5nv2n7uewgtnzbsc7g6gac3wme](https://appetize.io/app/5nv2n7uewgtnzbsc7g6gac3wme)
 
 # Development Challenges
 - User Interface design - App responsive experience was a challenge. Used [Jetpack Compose](https://developer.android.com/jetpack/compose) to come up with responsive UI
 # Future feature implementation
 - Multilanguage support
+- Filter by subregion, currency
 
