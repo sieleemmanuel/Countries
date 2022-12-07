@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: 1.8
+          distribution: 'zulu'
           cache: gradle
 
       - name: Run Unit tests
@@ -39,6 +40,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: 1.8
+          distribution: 'zulu'
       #      - name: Grant execute permission for gradlew
       #        run: chmod +x gradlew
       - name: Build APK
