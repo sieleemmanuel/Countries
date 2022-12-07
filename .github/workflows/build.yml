@@ -31,8 +31,8 @@ jobs:
     needs: unit-test
     runs-on: ubuntu-latest
     steps:
-      -  name: Checkout
-         uses: action/checkout@v3
+      - name: Checkout
+        uses: action/checkout@v3
       - name: Setup JDK
         uses: action/setup-java@v3
         with:
