@@ -3,76 +3,80 @@ name: CI workflow
 on:
   push:
     branches:
-      - master
+      - 'master'
   pull_request:
     branches:
-      - master
+      - 'master'
 
 jobs:
-  unit-test:
-    name: Running local test
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout the repository
-        uses: action/checkout@v3
-      - name: Setup JDK 11
+      - uses: action/checkout@v3
+      - name: Set up JDK 1.8
         uses: actions/setup-java@v3
         with:
-          distribution: "zulu"
-          java-version: '11'
+          java-version: 1.8
           cache: gradle
-      - name: Grant execute permission for gradlew
+
+      - name: Run Unit tests
         run: chmod +x gradlew
       - name: Setup Android SDK
-        uses: android-actions/setup=android@v2
+#        uses: android-actions/setup=android@v2
         run: bash .gradlew test --stacktrace
+
   apk:
     name: Generate APK
     needs: unit-test
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: action/checkout@v3
-      - name: Setup JDK
+#      - name: Checkout
+      - uses: action/checkout@v3
+      - name: Set up JDK 1.8
         uses: action/setup-java@v3
         with:
-          java-version: '11'
+          java-version: 1.8
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Build APK
         run: bash ./gradlew assembleDebug --stacktrace
-      - name: Upload APK
+      - name: Create APK artifact
         uses: action/upload-artifact@v1
         with:
           name: apk
           path: app/build/outputs/apk/debug/app-debug.apk
-  release:
-    name: Release APK
-    needs: apk
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download APK from build
-        uses: actions/download-artifact@v1
-        with:
-          name: apk
-      - name: Create Release
-        id: create_release
-        uses: acions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-      - name: Upload Relese APK
-        id: upload_release_asset
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: apk/app-debug.apk
-          asset_name: Countries.apk
-          asset_content_type: application/zip
+
+
+#  release:
+#    name: Release APK
+#    needs: apk
+#    if: startsWith(github.ref, 'refs/tags/v')
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Download APK from build
+#        uses: actions/download-artifact@v1
+#        with:
+#          name: apk
+#      - name: Create Release
+#        id: create_release
+#        uses: acions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          tag_name: ${{ github.ref }}
+#      - name: Upload Relese APK
+#        id: upload_release_asset
+#        uses: actions/upload-release-asset@v1.0.1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: apk/app-debug.apk
+#          asset_name: Countries.apk
+#          asset_content_type: application/zip
 
 
 
