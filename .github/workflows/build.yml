@@ -22,25 +22,25 @@ jobs:
           cache: gradle
 
       - name: Run Unit tests
-        run: chmod +x gradlew
-      - name: Setup Android SDK
-#        uses: android-actions/setup=android@v2
+        #        run: chmod +x gradlew
+        #      - name: Setup Android SDK
+        #        uses: android-actions/setup=android@v2
         run: bash .gradlew test --stacktrace
 
   apk:
     name: Generate APK
-    needs: unit-test
+    #    needs: unit-test
     runs-on: ubuntu-latest
 
     steps:
-#      - name: Checkout
-      - uses: action/checkout@v3
+      #      - name: Checkout
+      - uses: action/checkout@v2
       - name: Set up JDK 1.8
-        uses: action/setup-java@v3
+        uses: action/setup-java@v2
         with:
           java-version: 1.8
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      #      - name: Grant execute permission for gradlew
+      #        run: chmod +x gradlew
       - name: Build APK
         run: bash ./gradlew assembleDebug --stacktrace
       - name: Create APK artifact
