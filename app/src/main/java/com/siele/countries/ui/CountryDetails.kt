@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,8 +26,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
+import coil.decode.SvgDecoder
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import com.siele.countries.R
 import com.siele.countries.ui.theme.CountriesTheme
+import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.*
@@ -42,6 +48,7 @@ fun CountryDetails(navController: NavController, selectedCountry: String?) {
     }
 }
 
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun DetailsContent(
     paddingValues: PaddingValues,
@@ -50,6 +57,7 @@ fun DetailsContent(
     viewModel: CountriesViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
+    val pagerState = rememberPagerState()
     val country = viewModel.getCountry(selectedCountry!!)
     Log.d("Details", "country: $country ")
     Box(modifier = modifier
@@ -66,21 +74,48 @@ fun DetailsContent(
                .heightIn(200.dp),
                contentAlignment = Alignment.Center
            ){
-               val painter = rememberImagePainter(
-                   data = country?.flags?.last(),
-                   builder = {
-                       placeholder(R.drawable.ic_placeholder)
+
+
+               country?.flags?.size?.let {
+                   HorizontalPager(
+                       count = it,
+                       state = pagerState,
+                       modifier = modifier
+                           .heightIn(200.dp)
+                           .fillMaxWidth()
+                   ) { page ->
+                       val painter = rememberImagePainter(
+                       data = country.flags[page],
+                       builder = {
+                           placeholder(R.drawable.ic_placeholder)
+                           if (country.flags[page].toString().contains(".svg")) {
+                               decoder(SvgDecoder(LocalContext.current))
+                           }
+                       }
+                       )
+                       Column(
+                           modifier = modifier.fillMaxSize(),
+                           verticalArrangement = Arrangement.Top,
+                           horizontalAlignment = Alignment.CenterHorizontally
+                       ) {
+                           Box(contentAlignment = Alignment.BottomCenter){
+                               Image(
+                                   painter = painter,
+                                   contentDescription = "country flag" ,
+                                   modifier = modifier
+                                       .fillMaxWidth()
+                                       .heightIn(200.dp)
+                                       .padding(8.dp)
+                                       .clip(RoundedCornerShape(10.dp)),
+                                   contentScale = ContentScale.FillBounds
+                               )
+                           }
+                       }
+
                    }
-               )
-               Image(
-               painter = painter,
-               contentDescription = "country flag" ,
-               modifier = modifier
-                   .fillMaxWidth()
-                   .heightIn(200.dp)
-                   .clip(RoundedCornerShape(10.dp)),
-               contentScale = ContentScale.FillBounds
-           )
+               }
+
+
                Row(modifier = modifier
                    .fillMaxWidth()
                    .padding(horizontal = 16.dp),

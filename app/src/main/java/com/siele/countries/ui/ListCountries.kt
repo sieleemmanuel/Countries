@@ -51,13 +51,6 @@ fun ListCountries(
     modifier: Modifier = Modifier,
     navController: NavHostController
 ) {
-//    Scaffold(
-//        topBar = { TopBar() },
-//        modifier = modifier
-//            .fillMaxSize()
-//    ) { paddingValues ->
-//        ListCountriesContent(paddingValues = paddingValues, navController = navController)
-//    }
     val coroutineScope = rememberCoroutineScope()
     val bottomSheetState = rememberBottomSheetState(
         initialValue = BottomSheetValue.Collapsed
